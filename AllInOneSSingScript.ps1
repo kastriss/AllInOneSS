@@ -29,7 +29,7 @@ Write-Host "====================================================================
 # ------------------------------------------------------------------------------
 # STEP 1: SERVICES CHECK
 # ------------------------------------------------------------------------------
-Write-Host "EXECUTING LIVE SERVICES AUDIT..." -ForegroundColor Cyan
+Write-Host "SERVICES STATUS" -ForegroundColor Cyan
 $TargetServices = @{
     "pcasvc"           = "Pcasvc"
     "sysmain"          = "Sysmain"
@@ -66,7 +66,7 @@ Write-Host ""
 # ------------------------------------------------------------------------------
 # STEP 2: PREFETCH INTEGRITY
 # ------------------------------------------------------------------------------
-Write-Host "[*] 2. EXECUTION ATTRIBUTE AUDIT: WINDOWS PREFETCH..." -ForegroundColor Cyan
+Write-Host "PREFETCH INTEGRITY" -ForegroundColor Cyan
 $PrefetchPath = "C:\Windows\Prefetch"
 $FoundPrefetchArtifacts = 0
 
@@ -99,7 +99,7 @@ if (Test-Path $PrefetchPath) {
 # ------------------------------------------------------------------------------
 # STEP 3: RECYCLE BIN MODIFICATION
 # ------------------------------------------------------------------------------
-Write-Host "[*] 3. AUDITING RECYCLE BIN MODIFICATION TIMESTAMPS..." -ForegroundColor Cyan
+Write-Host "RECYCLE BIN" -ForegroundColor Cyan
 $RecycleBinPath = "C:\`$Recycle.Bin"
 
 if (Test-Path $RecycleBinPath) {
@@ -128,7 +128,7 @@ Write-Host ""
 # ------------------------------------------------------------------------------
 # STEP 4: Journal Deletion ( This took a WHILE to make )
 # ------------------------------------------------------------------------------
-Write-Host "[*] 4. INVESTIGATING FS INTEGRITY / USN JOURNAL DELETIONS..." -ForegroundColor Cyan
+Write-Host "JOURNAL DELETIONS" -ForegroundColor Cyan
 
 $UserExplorer = Get-Process explorer -ErrorAction SilentlyContinue | Sort-Object StartTime -Descending | Select-Object -First 1
 if ($UserExplorer) {
@@ -296,7 +296,7 @@ Write-Host ""
 # ------------------------------------------------------------------------------
 # STEP 5: POWERSHELL CONSOLE HISTORY DEEP ANALYSIS
 # ------------------------------------------------------------------------------
-Write-Host "[*] 5. RECONSTRUCTING CONSOLEHOST HISTORY TRAILS..." -ForegroundColor Cyan
+Write-Host "CONSOLE HOST HISTORY" -ForegroundColor Cyan
 $ConsoleHistoryPath = "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
 
 if (Test-Path $ConsoleHistoryPath) {
@@ -343,7 +343,7 @@ Write-Host ""`n
 
 
 Write-Host "======================================================================" -ForegroundColor Cyan
-Write-Host "   SYSTEM DEEP MONITOR STAGE INITIALIZING..." -ForegroundColor Cyan
+Write-Host "   LOOKING FOR MASKED EXECUTABLES" -ForegroundColor Cyan
 Write-Host "======================================================================`n" -ForegroundColor Cyan
 
 # Combined target folders
@@ -439,8 +439,8 @@ foreach ($Path in $TargetPaths) {
 # ------------------------------------------------------------------------------
 # CREDITS AND OUTPUT
 # ------------------------------------------------------------------------------
-Write-Host "[*] Scan complete." -ForegroundColor Cyan
-Write-Host "Made with love by kastris_`n" -ForegroundColor Magenta
+Write-Host "  Scan complete." -ForegroundColor Cyan
+Write-Host "Made by kastris_`n" -ForegroundColor Magenta
 
 if ($UnicodeFoundCount -eq 0 -and $SpoofFoundCount -eq 0) {
     Write-Host "[+] Clean! No hidden executables or suspicious Unicode file paths found." -ForegroundColor Green
