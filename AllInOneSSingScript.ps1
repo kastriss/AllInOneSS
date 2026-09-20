@@ -60,7 +60,6 @@ foreach ($Key in $ServiceOrder) {
         Write-Host "    ${DisplayName}     NOT FOUND" -ForegroundColor DarkRed
     }
 }
-Write-Host ""
 Write-Host "`nADDITIONAL SERVICES" -ForegroundColor Cyan
 
 $settings = @(
@@ -68,6 +67,8 @@ $settings = @(
     @{ Name = "PowerShell Logging"; Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"; Key = "EnableScriptBlockLogging"; Warning = "Disabled"; Safe = "Enabled" },
     @{ Name = "Activities Cache"; Path = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"; Key = "EnableActivityFeed"; Warning = "Disabled"; Safe = "Enabled" },
     @{ Name = "Prefetch Enabled"; Path = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters"; Key = "EnablePrefetcher"; Warning = "Disabled"; Safe = "Enabled" }
+
+Write-Host ""
 
 
 # ------------------------------------------------------------------------------
