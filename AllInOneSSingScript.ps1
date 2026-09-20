@@ -29,12 +29,12 @@ Write-Host "====================================================================
 # ------------------------------------------------------------------------------
 # STEP 1: SERVICES CHECK
 # ------------------------------------------------------------------------------
-Write-Host "[*] 1. EXECUTING LIVE SERVICES AUDIT..." -ForegroundColor Cyan
+Write-Host "EXECUTING LIVE SERVICES AUDIT..." -ForegroundColor Cyan
 $TargetServices = @{
     "pcasvc"           = "Pcasvc"
     "sysmain"          = "Sysmain"
     "eventlog"         = "Eventlogs"
-    "diagtrack"        = "Diagtrack"  # FIXED: Restored the 'c' to match Windows internal naming rules
+    "diagtrack"        = "Diagtrack"
     "dps"              = "Dps"
     "appinfo"          = "AppInfo"
     "plugplay"         = "PlugPlay"
@@ -52,12 +52,12 @@ foreach ($Key in $ServiceOrder) {
     
     if ($Service) {
         if ($Service.Status -eq "Running") {
-            Write-Host "    ${DisplayName}: RUNNING" -ForegroundColor Green
+            Write-Host "    ${DisplayName}     RUNNING" -ForegroundColor Green
         } else {
-            Write-Host "    ${DisplayName}: STOPPED" -ForegroundColor Red
+            Write-Host "    ${DisplayName}     STOPPED" -ForegroundColor Red
         }
     } else {
-        Write-Host "    ${DisplayName}: NOT FOUND" -ForegroundColor DarkRed
+        Write-Host "    ${DisplayName}     NOT FOUND" -ForegroundColor DarkRed
     }
 }
 Write-Host ""
