@@ -444,7 +444,7 @@ $SpoofFoundCount = 0
                         $SigText = if ($Signature.Status -eq "Valid") { "SIGNED (Valid)" } else { "UNSIGNED ($($Signature.Status))" }
                         $SigColor = if ($Signature.Status -eq "Valid") { "Green" } else { "Red" }
 
-                        Write-Host "[!] SUSPICIOUS MASKED EXECUTABLE FOUND!" -ForegroundColor Yellow
+                        Write-Host "[!] Extentionless/Modified Extention Found!" -ForegroundColor Yellow
                         Write-Host "    Current Name: $($_.Name)" -ForegroundColor White
                         Write-Host "    Full Path:    $($_.FullName)" -ForegroundColor Gray
                         Write-Host "    Signature:    $SigText" -ForegroundColor $SigColor
@@ -463,7 +463,7 @@ $SpoofFoundCount = 0
                     $SigText = if ($Signature.Status -eq "Valid") { "SIGNED (Valid) - Publisher: $($Signature.SignerCertificate.Subject)" } else { "UNSIGNED ($($Signature.Status))" }
 
                     if ($_.Name -match '\u202E') { Write-Host "[!] CRITICAL: Found Right-To-Left Override Character Masking (\u202E)!" -ForegroundColor Red } 
-                    else { Write-Host "[!] Found Unicode/Anomalous Characters in Path!" -ForegroundColor Yellow }
+                    else { Write-Host "[!] Found Unicode Characters in Path!" -ForegroundColor Yellow }
                     
                     Write-Host "    File Name: $($_.Name)" -ForegroundColor White
                     Write-Host "    Full Path: $($_.FullName)" -ForegroundColor Gray
