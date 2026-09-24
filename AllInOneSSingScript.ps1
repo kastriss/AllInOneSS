@@ -92,7 +92,7 @@ if (Test-Path (Get-Variable -Name "RegPF" -ValueOnly)) {
 }
 
 if ((Get-Variable -Name "PrefetchVal" -ValueOnly) -eq 0) {
-    Write-Host "EnablePrefetcher: DISABLED ( Value: 0 ) [!] EVASION ALERT" -ForegroundColor Red
+    Write-Host "EnablePrefetcher: DISABLED ( Value: 0 )" -ForegroundColor Red
 } else {
     Write-Host "EnablePrefetcher: Active ( Value: 3 )" -ForegroundColor Green
 }
@@ -110,7 +110,7 @@ if (Test-Path (Get-Variable -Name "RegML" -ValueOnly)) {
 }
 
 if ((Get-Variable -Name "ScriptLogOverride" -ValueOnly) -eq 1) {
-    Write-Host "EnabledScriptLogging: BYPASSED / FORCED OFF ( Value: 0 ) [!] EVASION ALERT" -ForegroundColor Red
+    Write-Host "EnabledScriptLogging: Disabled ( Value: 0 )" -ForegroundColor Red
 } else {
     Write-Host "EnabledScriptLogging: Active ( Default Profile )" -ForegroundColor Green
 }
@@ -124,7 +124,7 @@ if (Test-Path (Get-Variable -Name "RegCM" -ValueOnly)) {
 }
 
 if ((Get-Variable -Name "CmdIsBlocked" -ValueOnly) -eq 1) {
-    Write-Host "CMD: Disabled via Active Registry Lockout Policy [!]" -ForegroundColor Yellow
+    Write-Host "CMD: Disabled" -ForegroundColor Yellow
 } else {
     Write-Host "CMD: Active" -ForegroundColor Green
 }
@@ -135,7 +135,7 @@ if ((Get-Variable -Name "CmdIsBlocked" -ValueOnly) -eq 1) {
 Write-Host "`nConnected Drives:" -ForegroundColor Cyan
 
 if (Test-Path "C:") {
-    Write-Host "    C:  |  NTFS" -ForegroundColor White
+    Write-Host "    C:  |  NTFS" -ForegroundColor Green
 }
 
 if (Test-Path "D:") {
@@ -144,7 +144,7 @@ if (Test-Path "D:") {
         Write-Host "    D:  |  FAT32  ( Virtual Hard Drive )" -ForegroundColor Yellow
         EventFlagged = true
     } else {
-        Write-Host "    D:  |  FAT32" -ForegroundColor White
+        Write-Host "    D:  |  FAT32" -ForegroundColor Green
     }
 }
 
@@ -153,7 +153,7 @@ if (Test-Path "E:") {
         Write-Host "    E:  |  NTFS  ( Virtual Hard Drive )" -ForegroundColor Yellow
         EventFlagged = true
     } else {
-        Write-Host "    E:  |  NTFS" -ForegroundColor White
+        Write-Host "    E:  |  NTFS" -ForegroundColor Green
     }
 }
 
@@ -161,19 +161,17 @@ if (Test-Path "E:") {
 # ------------------------------------------------------------------------------
 # PART E: STASHED FLUID VHD DETECTOR LAYER (PURE-NATIVE OUTPUT REDIRECTION)
 # ------------------------------------------------------------------------------
-Write-Host "`n[.] Crawling Storage Volumes for Stashed Virtual Disk Containers..." -ForegroundColor Gray
+Write-Host "`nScanning for Virtual Drives..." -ForegroundColor Gray
 
 # Create safe directory target markers utilizing standard local path strings
 Set-Variable -Name "TargetPublic"    -Value "C:\Users\Public"
 Set-Variable -Name "TargetRoot"      -Value "C:\"
 
 # Check and output results directly using Out-String pipelines without any internal loop code
-Write-Host "    [!] Scanning root structures..." -ForegroundColor DarkGray
 Get-ChildItem -Path (Get-Variable -Name "TargetPublic" -ValueOnly) -Filter "*.vhd*" -File -Force -Recurse -ErrorAction SilentlyContinue | Select-Object Name, FullPath, Length | Out-String | ForEach-Object { Write-Host $PSItem -ForegroundColor Yellow }
 Get-ChildItem -Path "C:\Users" -Filter "*.vhd*" -File -Force -Recurse -ErrorAction SilentlyContinue | Select-Object Name, FullPath, Length | Out-String | ForEach-Object { Write-Host $PSItem -ForegroundColor Yellow }
 Get-ChildItem -Path (Get-Variable -Name "TargetRoot" -ValueOnly) -Filter "*.vhd*" -File -Force -ErrorAction SilentlyContinue | Select-Object Name, FullPath, Length | Out-String | ForEach-Object { Write-Host $PSItem -ForegroundColor Yellow }
 
-Write-Host "    [+] VHD Search pipeline validation engine sequence completed.`n" -ForegroundColor Green
 
 # ------------------------------------------------------------------------------
 # STEP 2: PREFETCH INTEGRITY (NO-SYNTAX BYPASS)
