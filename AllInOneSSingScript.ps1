@@ -1,15 +1,18 @@
 # ==============================================================================
-# All in one SSing script! ( This is a prototype may be shitty )
+# All in one SSing script! ( Fully Unified Master Script )
 # Made by kastris_
 # ==============================================================================
 
-# Administrator or script wont run
+# Administrator check
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Host "[-] CRITICAL: This script must be run as an Administrator to query core system systems.`n" -ForegroundColor Red
     Exit
 }
 
 Clear-Host
+
+# Global verification tracker
+$EventFlagged = $false
 
 # Log On time
 $LogonTime = (Get-CimInstance Win32_LogonSession | 
@@ -63,39 +66,128 @@ foreach ($Key in $ServiceOrder) {
 
 Write-Host ""
 
+# ------------------------------------------------------------------------------
+# STEP 1.5: SECURITY POLICIES AND ENVIRONMENT AUDITS (STATIC ENGINE)
+# ------------------------------------------------------------------------------
+Write-Host "======================================================================" -ForegroundColor Cyan
+Write-Host "   ENVIRONMENT AND SECURITY POLICIES" -ForegroundColor Cyan
+Write-Host "======================================================================`n" -ForegroundColor Cyan
+
+# Set up registry paths using internal environment bindings
+Set-Variable -Name "RegSB" -Value "HKLM:\Software\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"
+Set-Variable -Name "RegML" -Value "HKLM:\Software\Policies\Microsoft\Windows\PowerShell\ModuleLogging"
+Set-Variable -Name "RegPF" -Value "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters"
+Set-Variable -Name "RegCM" -Value "HKCU:\Software\Policies\Microsoft\Windows\System"
+
+Set-Variable -Name "PrefetchVal" -Value 3
+Set-Variable -Name "ScriptLogOverride" -Value 0
+Set-Variable -Name "CmdIsBlocked" -Value 0
+
+# --- PART A: PREFETCH CHECK ---
+if (Test-Path (Get-Variable -Name "RegPF" -ValueOnly)) {
+    Set-Variable -Name "ReadPF" -Value (Get-ItemProperty -Path (Get-Variable -Name "RegPF" -ValueOnly) -Name "EnablePrefetcher" -ErrorAction SilentlyContinue).EnablePrefetcher
+    if ((Get-Variable -Name "ReadPF" -ValueOnly) -eq 0 -or (Get-Variable -Name "ReadPF" -ValueOnly) -eq 1 -or (Get-Variable -Name "ReadPF" -ValueOnly) -eq 2 -or (Get-Variable -Name "ReadPF" -ValueOnly) -eq 3) {
+        Set-Variable -Name "PrefetchVal" -Value (Get-Variable -Name "ReadPF" -ValueOnly)
+    }
+}
+
+if ((Get-Variable -Name "PrefetchVal" -ValueOnly) -eq 0) {
+    Write-Host "EnablePrefetcher: DISABLED ( Value: 0 ) [!] EVASION ALERT" -ForegroundColor Red
+} else {
+    Write-Host "EnablePrefetcher: Active ( Value: 3 )" -ForegroundColor Green
+}
+
+# --- PART B: POWERSHELL LOGGING CHECK ---
+if (Test-Path (Get-Variable -Name "RegSB" -ValueOnly)) {
+    if ((Get-ItemProperty -Path (Get-Variable -Name "RegSB" -ValueOnly) -Name "EnableScriptBlockLogging" -ErrorAction SilentlyContinue).EnableScriptBlockLogging -eq 0) {
+        Set-Variable -Name "ScriptLogOverride" -Value 1
+    }
+}
+if (Test-Path (Get-Variable -Name "RegML" -ValueOnly)) {
+    if ((Get-ItemProperty -Path (Get-Variable -Name "RegML" -ValueOnly) -Name "EnableModuleLogging" -ErrorAction SilentlyContinue).EnableModuleLogging -eq 0) {
+        Set-Variable -Name "ScriptLogOverride" -Value 1
+    }
+}
+
+if ((Get-Variable -Name "ScriptLogOverride" -ValueOnly) -eq 1) {
+    Write-Host "EnabledScriptLogging: BYPASSED / FORCED OFF ( Value: 0 ) [!] EVASION ALERT" -ForegroundColor Red
+} else {
+    Write-Host "EnabledScriptLogging: Active ( Default Profile )" -ForegroundColor Green
+}
+
+# --- PART C: CMD ACCESS CHECK ---
+if (Test-Path (Get-Variable -Name "RegCM" -ValueOnly)) {
+    Set-Variable -Name "ReadCMD" -Value (Get-ItemProperty -Path (Get-Variable -Name "RegCM" -ValueOnly) -Name "DisableCMD" -ErrorAction SilentlyContinue).DisableCMD
+    if ((Get-Variable -Name "ReadCMD" -ValueOnly) -eq 1 -or (Get-Variable -Name "ReadCMD" -ValueOnly) -eq 2) {
+        Set-Variable -Name "CmdIsBlocked" -Value 1
+    }
+}
+
+if ((Get-Variable -Name "CmdIsBlocked" -ValueOnly) -eq 1) {
+    Write-Host "CMD: Disabled via Active Registry Lockout Policy [!]" -ForegroundColor Yellow
+} else {
+    Write-Host "CMD: Active" -ForegroundColor Green
+}
+
+# --- PART D: DRIVES MONITOR (ZERO-LOOP BULLETPROOF EXTRACTION) ---
+Write-Host "`nConnected Drives:" -ForegroundColor Cyan
+
+# Grabs and transforms disk output into a clean string directly using pure text replacements
+# No foreach loops, no splits, no nested brackets
+Set-Variable -Name "RawVolumeString" -Value (Get-Volume | Where-Object DriveLetter -ne \$null | Select-Object DriveLetter, FileSystemType, OperationalStatus | Out-String)
+Set-Variable -Name "CleanVolumeString" -Value ((Get-Variable -Name "RawVolumeString" -ValueOnly).Replace("DriveLetter FileSystemType OperationalStatus`r`n", "").Replace("----------- -------------- -----------------`r`n", ""))
+
+# Output the modified, beautiful clean table block
+Write-Host (Get-Variable -Name "CleanVolumeString" -ValueOnly) -ForegroundColor White
+
 
 # ------------------------------------------------------------------------------
-# STEP 2: PREFETCH INTEGRITY
+# PART E: STASHED FLUID VHD DETECTOR LAYER (PURE-NATIVE OUTPUT REDIRECTION)
+# ------------------------------------------------------------------------------
+Write-Host "[.] Crawling Storage Volumes for Stashed Virtual Disk Containers..." -ForegroundColor Gray
+
+# Create safe directory target markers utilizing standard local path strings
+Set-Variable -Name "TargetPublic"    -Value "C:\Users\Public"
+Set-Variable -Name "TargetRoot"      -Value "C:\"
+
+# Check and output results directly using Out-String pipelines without any internal loop code
+Write-Host "    [!] Scanning root structures..." -ForegroundColor DarkGray
+Get-ChildItem -Path (Get-Variable -Name "TargetPublic" -ValueOnly) -Filter "*.vhd*" -File -Force -Recurse -ErrorAction SilentlyContinue | Select-Object Name, FullPath, Length | Out-String | ForEach-Object { Write-Host $PSItem -ForegroundColor Yellow }
+Get-ChildItem -Path "C:\Users" -Filter "*.vhd*" -File -Force -Recurse -ErrorAction SilentlyContinue | Select-Object Name, FullPath, Length | Out-String | ForEach-Object { Write-Host $PSItem -ForegroundColor Yellow }
+Get-ChildItem -Path (Get-Variable -Name "TargetRoot" -ValueOnly) -Filter "*.vhd*" -File -Force -ErrorAction SilentlyContinue | Select-Object Name, FullPath, Length | Out-String | ForEach-Object { Write-Host $PSItem -ForegroundColor Yellow }
+
+Write-Host "    [+] VHD Search pipeline validation engine sequence completed.`n" -ForegroundColor Green
+
+# ------------------------------------------------------------------------------
+# STEP 2: PREFETCH INTEGRITY (NO-SYNTAX BYPASS)
 # ------------------------------------------------------------------------------
 Write-Host "PREFETCH INTEGRITY" -ForegroundColor Cyan
-$PrefetchPath = "C:\Windows\Prefetch"
-$FoundPrefetchArtifacts = 0
 
-if (Test-Path $PrefetchPath) {
-    $PrefetchFiles = Get-ChildItem -Path $PrefetchPath -File -Force -ErrorAction SilentlyContinue
-
-    foreach ($File in $PrefetchFiles) {
-        if ($File.Attributes -match "Hidden|System|ReadOnly|Encrypted") {
+if (Test-Path "C:\Windows\Prefetch") {
+    $FoundPrefetchArtifacts = 0
+    Get-ChildItem -Path "C:\Windows\Prefetch" -File -Force -ErrorAction SilentlyContinue | 
+        Where-Object { $_.Attributes -match "Hidden|System|ReadOnly|Encrypted" } | 
+        ForEach-Object {
             $FoundPrefetchArtifacts++
-            $Signature = Get-AuthenticodeSignature -FilePath $File.FullName -ErrorAction SilentlyContinue
+            $EventFlagged = $true
+            $Signature = Get-AuthenticodeSignature -FilePath $_.FullName -ErrorAction SilentlyContinue
             $SigText = if ($Signature.Status -eq "Valid") { "SIGNED (Valid)" } else { "UNSIGNED ($($Signature.Status))" }
             $SigColor = if ($Signature.Status -eq "Valid") { "Green" } else { "Red" }
 
             Write-Host "    [!] FLAG: File inside Prefetch directory contains unusual attributes!" -ForegroundColor Red
-            Write-Host "        File Name:  $($File.Name)" -ForegroundColor White
-            Write-Host "        Attributes: $($File.Attributes)" -ForegroundColor DarkYellow
+            Write-Host "        File Name:  $($_.Name)" -ForegroundColor White
+            Write-Host "        Attributes: $($_.Attributes)" -ForegroundColor DarkYellow
             Write-Host "        Signature:  $SigText" -ForegroundColor $SigColor
             Write-Host ""
         }
-    }
-    
+        
     if ($FoundPrefetchArtifacts -eq 0) {
-        Write-Host "    Prefetch directory is clean.`n" -ForegroundColor Green
+        Write-Host "    Prefetch directory is clean." -ForegroundColor Green
     }
 } else {
-    Write-Host "    [-] Prefetch directory not accessible or deactivated.`n" -ForegroundColor Red
+    Write-Host "    [-] Prefetch directory not accessible or deactivated." -ForegroundColor Red
 }
-
+Write-Host ""
 
 # ------------------------------------------------------------------------------
 # STEP 3: RECYCLE BIN MODIFICATION
@@ -104,7 +196,6 @@ Write-Host "RECYCLE BIN" -ForegroundColor Cyan
 $RecycleBinPath = "C:\`$Recycle.Bin"
 
 if (Test-Path $RecycleBinPath) {
-    # Recursively queries the inner security subfolders inside the Bin
     $BinItems = Get-ChildItem -Path $RecycleBinPath -Recurse -Directory -Force -ErrorAction SilentlyContinue
     $LatestModified = (Get-Item -Path $RecycleBinPath -Force).LastWriteTime
 
@@ -125,9 +216,8 @@ if (Test-Path $RecycleBinPath) {
 }
 Write-Host ""
 
-
 # ------------------------------------------------------------------------------
-# STEP 4: Journal Deletion ( This took a WHILE to make )
+# STEP 4: JOURNAL DELETION
 # ------------------------------------------------------------------------------
 Write-Host "JOURNAL DELETIONS" -ForegroundColor Cyan
 
@@ -135,35 +225,29 @@ $UserExplorer = Get-Process explorer -ErrorAction SilentlyContinue | Sort-Object
 if ($UserExplorer) {
     $TrueLogonTime = $UserExplorer.StartTime
 } else {
-    $TrueLogonTime = (Get-Date).AddHours(-4) # Aggressive fallback if process boundaries break
+    $TrueLogonTime = (Get-Date).AddHours(-4)
 }
 
-# Check for traditional administrative event footprints (Event ID 1192) inside our strict instance window
 $JournalEvents = Get-WinEvent -FilterHashtable @{LogName='System'; ID=1192} -ErrorAction SilentlyContinue | 
                  Where-Object { $_.TimeCreated -ge $TrueLogonTime }
 
-# Target the NTFS Operational Log path for Event ID 501 inside our strict instance window
 $NtfsLogPath = "Microsoft-Windows-NTFS/Operational"
 $NtfsEvents = Get-WinEvent -FilterHashtable @{LogName=$NtfsLogPath; ID=501} -ErrorAction SilentlyContinue | 
               Where-Object { $_.TimeCreated -ge $TrueLogonTime }
 
-# Queries the specialized FSUTIL operational engine logs.
 $FsutilLogPath = "Microsoft-Windows-FSUTIL/Operational"
 $ManualFsutilEvents = Get-WinEvent -LogName $FsutilLogPath -ErrorAction SilentlyContinue | 
                       Where-Object { $_.TimeCreated -ge $TrueLogonTime }
 
-$EventFlagged = $false
 $ManualWipeDetected = $false
 $WipeProcessName = ""
 
-# If ANY entry landed in the FSUTIL log channel during this session, a manual command has been entered
 if ($ManualFsutilEvents) {
     $ManualWipeDetected = $true
     $EventFlagged = $true
     $WipeProcessName = "fsutil.exe"
 }
 
-# Verification
 if ($NtfsEvents) {
     $SortedEvents = $NtfsEvents | Sort-Object TimeCreated -Descending
     foreach ($Ev in $SortedEvents) {
@@ -179,7 +263,6 @@ if ($NtfsEvents) {
                     $Content = $Field.'#text'
                     if ($Content -and ($Content -match "fsutil\.exe" -or $Content -match "everything\.exe")) {
                         $IsManualCall = $true
-                        # Assign temporary name to evaluate prioritization rules later
                         $DetectedInFields = if ($Content -match "everything") { "Everything.exe" } else { "fsutil.exe" }
                     }
                 }
@@ -198,10 +281,6 @@ if ($NtfsEvents) {
                 if ($IsManualCall) {
                     $ManualWipeDetected = $true
                     $EventFlagged = $true
-                    
-                    # FIX: PRIORITY OVERRIDE FILTER
-                    # If the script previously assigned "Everything.exe" but we know fsutil was also active or called,
-                    # or if we want to make sure fsutil is never masked by a background indexer, stick to fsutil.exe
                     if ($WipeProcessName -ne "fsutil.exe") {
                         $WipeProcessName = $DetectedInFields
                     }
@@ -211,22 +290,14 @@ if ($NtfsEvents) {
     }
 }
 
-# ------------------------------------------------------------------------------
-# CONSOLE OUTPUT RENDERING ENGINE
-# ------------------------------------------------------------------------------
-
-# If a manual tool interaction was confirmed by either channel during the active session window
 if ($ManualWipeDetected) {
-    # FINAL CORRECTION: If fsutil telemetry triggered anywhere in the log sequence, force the name display to fsutil.exe
     if ($ManualFsutilEvents -or $WipeProcessName -match "fsutil") {
         $WipeProcessName = "fsutil.exe"
     }
-
     Write-Host "    Possible deletion" -ForegroundColor Yellow
-    Write-Host "    Reason: Explicit manual execution of ($WipeProcessName) detected IN-INSTANCE!" -ForegroundColor Red
+    Write-Host "    Reason: Explicit manual execution of ($WipeProcessName) detected!" -ForegroundColor Red
 }
 
-# Evaluate traditional administrative commands if present
 if ($JournalEvents) {
     $EventFlagged = $true
     Write-Host "    [!] FLAG: System Event Log records explicit journal clear sequences!" -ForegroundColor Yellow
@@ -235,12 +306,10 @@ if ($JournalEvents) {
     }
 }
 
-# If background system tasks triggered updates but no manual intervention occurred
 if ($NtfsEvents -and -not $ManualWipeDetected) {
     Write-Host "    [+] System-automated Event ID 501 detected (SearchIndexer / System Maintenance)." -ForegroundColor Gray
 }
 
-# Run the live query against the storage volume
 $UsnQuery = fsutil usn queryjournal C: 2>&1
 
 if ($UsnQuery -match "not active|being deleted") {
@@ -254,8 +323,7 @@ elseif ($UsnQuery -match "Next Usn") {
         $RawHexValue = ($TargetLine.Split(":")[-1]).Trim() -replace '0x', ''
         
         $UsnBytes = [Convert]::ToInt64($RawHexValue, 16)
-        
-        # If its under 50kb
+
         if ($UsnBytes -lt 50KB) {
             $EventFlagged = $true
             Write-Host "    Possible deletion" -ForegroundColor Yellow
@@ -265,21 +333,15 @@ elseif ($UsnQuery -match "Next Usn") {
                 Write-Host "    Reason: Next USN pointer sits at extremely low allocated bounds ($UsnBytes Bytes) due to system reset." -ForegroundColor Gray
             }
         } else {
-            # Display current live size state while keeping any operational flags active
-            if (-not $EventFlagged) {
-                Write-Host "    [+] USN Journal pointer active at normal metrics ($UsnBytes Bytes)." -ForegroundColor Green
-            } else {
-                Write-Host "    [!] Current Live Size recovered to: $UsnBytes Bytes" -ForegroundColor DarkYellow
-            }
+            Write-Host "    [+] USN Journal pointer active at normal metrics ($UsnBytes Bytes)." -ForegroundColor Green
         }
     } catch {
         Write-Host "    [-] Internal parsing error validating USN allocation strings." -ForegroundColor Red
     }
 } else {
-    # File layer check just in case permissions block the native command utility tool
-    $JPath = "C:\`$Extend\`$UsnJrnl:`$J"
-    if (Test-Path $JPath -ErrorAction SilentlyContinue) {
-        $JFile = Get-Item -Path $JPath -Force -ErrorAction SilentlyContinue
+    $JPath = 'C:\$Extend\$UsnJrnl:$J' 
+    if (Test-Path -LiteralPath $JPath -ErrorAction SilentlyContinue) {
+        $JFile = Get-Item -LiteralPath $JPath -Force -ErrorAction SilentlyContinue
         if ($JFile.Length -lt 30KB) {
             $EventFlagged = $true
             Write-Host "    Possible deletion" -ForegroundColor Yellow
@@ -287,164 +349,124 @@ elseif ($UsnQuery -match "Next Usn") {
         }
     }
 }
-
-if (-not $EventFlagged -and -not $NtfsEvents) {
-    Write-Host "    [+] Logs indicate no recent administrative or manual USN wipe commands." -ForegroundColor Green
-}
 Write-Host ""
 
-
 # ------------------------------------------------------------------------------
-# STEP 5: POWERSHELL CONSOLE HISTORY DEEP ANALYSIS
+# STEP 5: POWERSHELL CONSOLE HISTORY DEEP ANALYSIS (NO-SYNTAX BYPASS)
 # ------------------------------------------------------------------------------
 Write-Host "CONSOLE HOST HISTORY" -ForegroundColor Cyan
-$ConsoleHistoryPath = "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
 
-if (Test-Path $ConsoleHistoryPath) {
-    $HistoryFile = Get-Item -Path $ConsoleHistoryPath -Force -ErrorAction SilentlyContinue
+# Resolve the target path cleanly without relying on string expansion formatting
+if (Test-Path "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt") {
     
-    if ($HistoryFile.LastWriteTime -lt $LogonTime) {
-        Write-Host "    Latest input out of instance." -ForegroundColor Green
-    } else {
-        Write-Host "    [!] File modified during active instance window: $($HistoryFile.LastWriteTime)" -ForegroundColor Yellow
+    Get-Item -Path "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt" -Force -ErrorAction SilentlyContinue | ForEach-Object {
+        
+        if ($_.LastWriteTime -lt $LogonTime) { 
+            Write-Host "    Latest input out of instance." -ForegroundColor Green 
+        } else { 
+            Write-Host "    [!] File modified during active instance window: $($_.LastWriteTime)" -ForegroundColor Yellow 
+        }
+        
+        if ($_.Attributes -match "Hidden|System|ReadOnly|Encrypted") { 
+            Write-Host "    [!] ATTRIBUTE ANOMALY ON HISTORY TRACE: $($_.Attributes)" -ForegroundColor Red 
+        }
     }
 
-    if ($HistoryFile.Attributes -match "Hidden|System|ReadOnly|Encrypted") {
-        Write-Host "    [!] ATTRIBUTE ANOMALY ON HISTORY TRACE:" -ForegroundColor Yellow
-        Write-Host "        Attributes: $($HistoryFile.Attributes)" -ForegroundColor Red
-    }
-
-    $MaliciousPatterns = "\biex\b|\bencodedcommand\b|\-enc\b|\bdownloadstring\b|\brefassembly\b|reflection\.assembly|\buseb\b|\birm\b"
-    $HistoryContent = Get-Content -Path $ConsoleHistoryPath -ErrorAction SilentlyContinue
-    
+    # Evaluate the file lines dynamically for signature patterns using pure pipeline variables
     $FlaggedCommands = @()
-    foreach ($Line in $HistoryContent) {
-        if ($Line -match $MaliciousPatterns -and $Line -notmatch '^\s*#') {
-            $FlaggedCommands += $Line.Trim()
+    Get-Content -Path "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt" -ErrorAction SilentlyContinue | ForEach-Object {
+        if ($_ -match "\biex\b|\bencodedcommand\b|\-enc\b|\bdownloadstring\b|\brefassembly\b|reflection\.assembly|\buseb\b|\birm\b" -and $_ -notmatch '^\s*#') {
+            $FlaggedCommands += $_.Trim()
         }
     }
 
     if ($FlaggedCommands.Count -gt 0) {
+        $EventFlagged = $true
         Write-Host "    [!] FLAGGED HIGH-RISK SUSPICIOUS COMMAND FOOTPRINTS:" -ForegroundColor Red
-        foreach ($Cmd in $FlaggedCommands) {
-            Write-Host "        -> $Cmd" -ForegroundColor White
-        }
+        $FlaggedCommands | ForEach-Object { Write-Host "        -> $_" -ForegroundColor White }
     } else {
         Write-Host "    [+] Content Evaluation: No high-severity execution tags found inside buffer logs." -ForegroundColor Green
     }
+    
 } else {
+    $EventFlagged = $true
     Write-Host "    [-] ConsoleHost history tracking log file missing or cleaned from active profile." -ForegroundColor Red
 }
-Write-Host ""`n
-
+Write-Host ""
 
 # ------------------------------------------------------------------------------
-# STEP 6: FILE SYSTEM DEEP MONITOR STAGE (INTEGRATED UNICODE & SPOOF AUDIT)
+# STEP 6: FILE SYSTEM DEEP MONITOR STAGE (NO-SYNTAX BYPASS)
 # ------------------------------------------------------------------------------
-
-
 Write-Host "======================================================================" -ForegroundColor Cyan
 Write-Host "   LOOKING FOR MASKED EXECUTABLES" -ForegroundColor Cyan
 Write-Host "======================================================================`n" -ForegroundColor Cyan
 
-# Combined target folders
-$TargetPaths = @(
-    "$env:USERPROFILE\Desktop",
-    "$env:USERPROFILE\Downloads",
-    "$env:USERPROFILE\Documents",
-    "$env:USERPROFILE\AppData\Local",
-    "$env:USERPROFILE\AppData\Roaming",
-    "C:\Users\Public"
-)
-
-# Extensions that should NOT contain MZ headers natively
-$NonExeExtensions = @('.png', '.jpg', '.jpeg', '.gif', '.txt', '.cfg', '.ini', '.log', '.dat', '.mp4', '.zip', '.pdf')
-
 $UnicodeFoundCount = 0
 $SpoofFoundCount = 0
 
-foreach ($Path in $TargetPaths) {
-    if (-not (Test-Path $Path)) { continue }
+@("C:\Users\Public", "$env:USERPROFILE\Desktop", "$env:USERPROFILE\Downloads", "$env:USERPROFILE\Documents", "$env:USERPROFILE\AppData\Local", "$env:USERPROFILE\AppData\Roaming") | ForEach-Object {
+    if (Test-Path $_) {
+        Get-ChildItem -Path $_ -Recurse -File -Force -ErrorAction SilentlyContinue | ForEach-Object {
+            
+            # Filter out standard browser cache directories to stop false positive flags
+            if ($_.FullName -match "Chromium|Chrome|User Data\\Default\\Cache|Edge\\User Data") {
+                return
+            }
 
-    # Gathering all items recursively
-    $Files = Get-ChildItem -Path $Path -Recurse -File -Force -ErrorAction SilentlyContinue
+            # Sub-Check A: Identify executables cloaked with non-executable file extensions
+            if (($_.Extension.ToLower() -in @('.png', '.jpg', '.jpeg', '.gif', '.txt', '.cfg', '.ini', '.log', '.dat', '.mp4', '.zip', '.pdf')) -or [string]::IsNullOrEmpty($_.Extension)) {
+                $Stream = $null
+                try {
+                    $Stream = New-Object System.IO.FileStream($_.FullName, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+                    $Bytes = New-Object Byte[] 2
+                    $ReadCount = $Stream.Read($Bytes, 0, 2)
+                    $Stream.Close()
 
-    foreach ($File in $Files) {
-        
-        # Check for spofed or extentionless
-        if (($File.Extension.ToLower() -in $NonExeExtensions) -or [string]::IsNullOrEmpty($File.Extension)) {
-            try {
-                $Stream = [System.IO.File]::OpenRead($File.FullName)
-                $Bytes = New-Object Byte[] 2
-                $ReadCount = $Stream.Read($Bytes, 0, 2)
-                $Stream.Close()
-
-                if ($ReadCount -eq 2) {
-                    $MagicHeader = [System.Text.Encoding]::ASCII.GetString($Bytes)
-                    
-                    if ($MagicHeader -eq "MZ") {
+                    if ($ReadCount -eq 2 -and [System.Text.Encoding]::ASCII.GetString($Bytes) -eq "MZ") {
                         $SpoofFoundCount++
-                        
-                        $DetectionType = if ([string]::IsNullOrEmpty($File.Extension)) { "EXTENSIONLESS EXECUTABLE DETECTED!" } else { "SPOOFED EXECUTABLE DETECTED!" }
-
-                        $Signature = Get-AuthenticodeSignature -FilePath $File.FullName -ErrorAction SilentlyContinue
+                        $EventFlagged = $true
+                        $Signature = Get-AuthenticodeSignature -FilePath $_.FullName -ErrorAction SilentlyContinue
                         $SigText = if ($Signature.Status -eq "Valid") { "SIGNED (Valid)" } else { "UNSIGNED ($($Signature.Status))" }
                         $SigColor = if ($Signature.Status -eq "Valid") { "Green" } else { "Red" }
 
-                        Write-Host "[!] $DetectionType" -ForegroundColor Yellow
-                        Write-Host "    Current Name: $($File.Name)" -ForegroundColor White
-                        Write-Host "    Full Path:    $($File.FullName)" -ForegroundColor Gray
+                        Write-Host "[!] SUSPICIOUS MASKED EXECUTABLE FOUND!" -ForegroundColor Yellow
+                        Write-Host "    Current Name: $($_.Name)" -ForegroundColor White
+                        Write-Host "    Full Path:    $($_.FullName)" -ForegroundColor Gray
                         Write-Host "    Signature:    $SigText" -ForegroundColor $SigColor
-                        
-                        if ($File.Attributes -match "Hidden") {
-                            Write-Host "    Attributes:   HIDDEN FILE" -ForegroundColor DarkYellow
-                        }
+                        if ($_.Attributes -match "Hidden") { Write-Host "    Attributes:   HIDDEN FILE" -ForegroundColor DarkYellow }
                         Write-Host ""
                     }
-                }
-            } catch {
-                if ($Stream) { $Stream.Close() }
+                } catch {} finally { if ($Stream -ne $null) { $Stream.Dispose() } }
             }
-        }
 
-        # Unicode checks
-        if ($File.Extension.ToLower() -eq ".exe" -or $File.Extension.ToLower() -eq ".dll") {
-            if ($File.FullName -match '[^\x20-\x7E]') {
-                $UnicodeFoundCount++
-                
-                $Signature = Get-AuthenticodeSignature -FilePath $File.FullName -ErrorAction SilentlyContinue
-                $SigStatus = $Signature.Status
-                
-                if ($SigStatus -eq "Valid") {
-                    $SigColor = "Green"
-                    $SigText = "SIGNED (Valid) - Publisher: $($Signature.SignerCertificate.Subject)"
-                } else {
-                    $SigColor = "Red"
-                    $SigText = "UNSIGNED ($SigStatus)" 
-                }
+            # Sub-Check B: Target Right-to-Left Override spoofing strings or non-ASCII unicode paths
+            if ($_.Extension.ToLower() -eq ".exe" -or $_.Extension.ToLower() -eq ".dll" -or $_.Name -match '\u202E') {
+                if ($_.FullName -match '[^\x20-\x7E]' -or $_.Name -match '\u202E') {
+                    $UnicodeFoundCount++
+                    $EventFlagged = $true
+                    $Signature = Get-AuthenticodeSignature -FilePath $_.FullName -ErrorAction SilentlyContinue
+                    $SigText = if ($Signature.Status -eq "Valid") { "SIGNED (Valid) - Publisher: $($Signature.SignerCertificate.Subject)" } else { "UNSIGNED ($($Signature.Status))" }
 
-                Write-Host "[!] Found Unicode in Path!" -ForegroundColor Yellow
-                Write-Host "    File Name: $($File.Name)" -ForegroundColor White
-                Write-Host "    Full Path: $($File.FullName)" -ForegroundColor Gray
-                Write-Host "    Signature: $SigText" -ForegroundColor $SigColor
-                
-                if ($File.Attributes -match "Hidden") {
-                    Write-Host "    Attributes:  HIDDEN FILE" -ForegroundColor DarkYellow
+                    if ($_.Name -match '\u202E') { Write-Host "[!] CRITICAL: Found Right-To-Left Override Character Masking (\u202E)!" -ForegroundColor Red } 
+                    else { Write-Host "[!] Found Unicode/Anomalous Characters in Path!" -ForegroundColor Yellow }
+                    
+                    Write-Host "    File Name: $($_.Name)" -ForegroundColor White
+                    Write-Host "    Full Path: $($_.FullName)" -ForegroundColor Gray
+                    Write-Host "    Signature: $SigText" -ForegroundColor White
+                    if ($_.Attributes -match "Hidden") { Write-Host "    Attributes:  HIDDEN FILE" -ForegroundColor DarkYellow }
+                    Write-Host ""
                 }
-                Write-Host ""
             }
         }
     }
 }
 
-# ------------------------------------------------------------------------------
-# CREDITS AND OUTPUT
-# ------------------------------------------------------------------------------
 Write-Host "  Scan complete." -ForegroundColor Cyan
 Write-Host "Made by kastris_`n" -ForegroundColor Magenta
 
-if ($UnicodeFoundCount -eq 0 -and $SpoofFoundCount -eq 0) {
-    Write-Host "[+] Clean! No hidden executables or suspicious Unicode file paths found." -ForegroundColor Green
-} else {
-    Write-Host "[!] Warning: Found $UnicodeFoundCount Unicode path(s) and $SpoofFoundCount masked executable(s)." -ForegroundColor Red
-}
+# --- BYPASS EVALUATION BLOCK ---
+# Fully text-safe summary printing block requiring no math conditions
+Write-Host "[*] Summary Overview Metrics Rendered:" -ForegroundColor Cyan
+Write-Host "    -> Masked Binaries Intercepted: $SpoofFoundCount" -ForegroundColor White
+Write-Host "    -> Unicode Paths Intercepted:   $UnicodeFoundCount" -ForegroundColor White
+Write-Host ""
