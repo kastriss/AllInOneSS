@@ -161,7 +161,7 @@ if (Test-Path "E:") {
 # ------------------------------------------------------------------------------
 # PART E: STASHED FLUID VHD DETECTOR LAYER (PURE-NATIVE OUTPUT REDIRECTION)
 # ------------------------------------------------------------------------------
-Write-Host "`nScanning for Virtual Drives..." -ForegroundColor Gray
+Write-Host "`nScanning for Virtual Drives..." -ForegroundColor Cyan
 
 # Create safe directory target markers utilizing standard local path strings
 Set-Variable -Name "TargetPublic"    -Value "C:\Users\Public"
@@ -234,7 +234,7 @@ Write-Host ""
 # ------------------------------------------------------------------------------
 # STEP 4: JOURNAL DELETION
 # ------------------------------------------------------------------------------
-Write-Host "JOURNAL DELETIONS" -ForegroundColor Cyan
+Write-Host "JOURNAL DELETION" -ForegroundColor Cyan
 
 $UserExplorer = Get-Process explorer -ErrorAction SilentlyContinue | Sort-Object StartTime -Descending | Select-Object -First 1
 if ($UserExplorer) {
@@ -310,7 +310,7 @@ if ($ManualWipeDetected) {
         $WipeProcessName = "fsutil.exe"
     }
     Write-Host "    Possible deletion" -ForegroundColor Yellow
-    Write-Host "    Reason: Explicit manual execution of ($WipeProcessName) detected!" -ForegroundColor Red
+    Write-Host "    Reason: Manual Execution of ($WipeProcessName) was detected!" -ForegroundColor Red
 }
 
 if ($JournalEvents) {
@@ -377,13 +377,13 @@ if (Test-Path "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_
     Get-Item -Path "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt" -Force -ErrorAction SilentlyContinue | ForEach-Object {
         
         if ($_.LastWriteTime -lt $LogonTime) { 
-            Write-Host "    Latest input out of instance." -ForegroundColor Green 
+            Write-Host "    Latest modification was out of instance." -ForegroundColor Green 
         } else { 
-            Write-Host "    [!] File modified during active instance window: $($_.LastWriteTime)" -ForegroundColor Yellow 
+            Write-Host "    File was modified in instance: $($_.LastWriteTime)" -ForegroundColor Yellow 
         }
         
         if ($_.Attributes -match "Hidden|System|ReadOnly|Encrypted") { 
-            Write-Host "    [!] ATTRIBUTE ANOMALY ON HISTORY TRACE: $($_.Attributes)" -ForegroundColor Red 
+            Write-Host "    File contains the following attributes: $($_.Attributes)" -ForegroundColor Red 
         }
     }
 
@@ -397,15 +397,15 @@ if (Test-Path "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_
 
     if ($FlaggedCommands.Count -gt 0) {
         $EventFlagged = $true
-        Write-Host "    [!] FLAGGED HIGH-RISK SUSPICIOUS COMMAND FOOTPRINTS:" -ForegroundColor Red
+        Write-Host "    Flagged Commands:" -ForegroundColor Red
         $FlaggedCommands | ForEach-Object { Write-Host "        -> $_" -ForegroundColor White }
     } else {
-        Write-Host "    [+] Content Evaluation: No high-severity execution tags found inside buffer logs." -ForegroundColor Green
+        Write-Host "    No suspicious commands found." -ForegroundColor Green
     }
     
 } else {
     $EventFlagged = $true
-    Write-Host "    [-] ConsoleHost history tracking log file missing or cleaned from active profile." -ForegroundColor Red
+    Write-Host "    File wasn't found. May be deleted/deactivated." -ForegroundColor Red
 }
 Write-Host ""
 
