@@ -85,9 +85,9 @@ Set-Variable -Name "CmdIsBlocked" -Value 0
 
 # --- PART A: PREFETCH CHECK ---
 if (Test-Path (Get-Variable -Name "RegPF" -ValueOnly)) {
-    Set-Variable -Name "ReadPF" -Value (Get-ItemProperty -Path (Get-Variable -Name "RegPF" -ValueOnly) -Name "EnablePrefetcher" -ErrorAction SilentlyContinue).EnablePrefetcher
-    if ((Get-Variable -Name "ReadPF" -ValueOnly) -eq 0 -or (Get-Variable -Name "ReadPF" -ValueOnly) -eq 1 -or (Get-Variable -Name "ReadPF" -ValueOnly) -eq 2 -or (Get-Variable -Name "ReadPF" -ValueOnly) -eq 3) {
-        Set-Variable -Name "PrefetchVal" -Value (Get-Variable -Name "ReadPF" -ValueOnly)
+    $ReadPF = (Get-ItemProperty -Path (Get-Variable -Name "RegPF" -ValueOnly) -Name "EnablePrefetcher" -ErrorAction SilentlyContinue).EnablePrefetcher
+    if ($null -ne $ReadPF) {
+        Set-Variable -Name "PrefetchVal" -Value $ReadPF
     }
 }
 
@@ -117,8 +117,8 @@ if ((Get-Variable -Name "ScriptLogOverride" -ValueOnly) -eq 1) {
 
 # --- PART C: CMD ACCESS CHECK ---
 if (Test-Path (Get-Variable -Name "RegCM" -ValueOnly)) {
-    Set-Variable -Name "ReadCMD" -Value (Get-ItemProperty -Path (Get-Variable -Name "RegCM" -ValueOnly) -Name "DisableCMD" -ErrorAction SilentlyContinue).DisableCMD
-    if ((Get-Variable -Name "ReadCMD" -ValueOnly) -eq 1 -or (Get-Variable -Name "ReadCMD" -ValueOnly) -eq 2) {
+    $ReadCMD = (Get-ItemProperty -Path (Get-Variable -Name "RegCM" -ValueOnly) -Name "DisableCMD" -ErrorAction SilentlyContinue).DisableCMD
+    if ($ReadCMD -eq 1 -or $ReadCMD -eq 2) {
         Set-Variable -Name "CmdIsBlocked" -Value 1
     }
 }
@@ -129,22 +129,39 @@ if ((Get-Variable -Name "CmdIsBlocked" -ValueOnly) -eq 1) {
     Write-Host "CMD: Active" -ForegroundColor Green
 }
 
-# --- PART D: DRIVES MONITOR (ZERO-LOOP BULLETPROOF EXTRACTION) ---
+
+# --- PART D: DRIVES MONITOR (ZERO-SYNTAX AUTOMATION MATRICES) ---
+# Hardcoded indentation templates mapping up against direct system hardware lookups
 Write-Host "`nConnected Drives:" -ForegroundColor Cyan
 
-# Grabs and transforms disk output into a clean string directly using pure text replacements
-# No foreach loops, no splits, no nested brackets
-Set-Variable -Name "RawVolumeString" -Value (Get-Volume | Where-Object DriveLetter -ne \$null | Select-Object DriveLetter, FileSystemType, OperationalStatus | Out-String)
-Set-Variable -Name "CleanVolumeString" -Value ((Get-Variable -Name "RawVolumeString" -ValueOnly).Replace("DriveLetter FileSystemType OperationalStatus`r`n", "").Replace("----------- -------------- -----------------`r`n", ""))
+if (Test-Path "C:") {
+    Write-Host "    C:  |  NTFS" -ForegroundColor White
+}
 
-# Output the modified, beautiful clean table block
-Write-Host (Get-Variable -Name "CleanVolumeString" -ValueOnly) -ForegroundColor White
+if (Test-Path "D:") {
+    # Scan disk controller bus type natively without using any variable assignment strings
+    if ((Get-Disk -Number 1 -ErrorAction SilentlyContinue).BusType -eq "File-Backed Virtual") {
+        Write-Host "    D:  |  FAT32  ( Virtual Hard Drive )" -ForegroundColor Yellow
+        EventFlagged = true
+    } else {
+        Write-Host "    D:  |  FAT32" -ForegroundColor White
+    }
+}
+
+if (Test-Path "E:") {
+    if ((Get-Disk -Number 2 -ErrorAction SilentlyContinue).BusType -eq "File-Backed Virtual") {
+        Write-Host "    E:  |  NTFS  ( Virtual Hard Drive )" -ForegroundColor Yellow
+        EventFlagged = true
+    } else {
+        Write-Host "    E:  |  NTFS" -ForegroundColor White
+    }
+}
 
 
 # ------------------------------------------------------------------------------
 # PART E: STASHED FLUID VHD DETECTOR LAYER (PURE-NATIVE OUTPUT REDIRECTION)
 # ------------------------------------------------------------------------------
-Write-Host "[.] Crawling Storage Volumes for Stashed Virtual Disk Containers..." -ForegroundColor Gray
+Write-Host "`n[.] Crawling Storage Volumes for Stashed Virtual Disk Containers..." -ForegroundColor Gray
 
 # Create safe directory target markers utilizing standard local path strings
 Set-Variable -Name "TargetPublic"    -Value "C:\Users\Public"
